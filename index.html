@@ -10,6 +10,20 @@
   </head>
   <body>
     <div id="root"></div>
+    <noscript>Cette application nécessite JavaScript. <a href="./docs/">Ouvrir la version statique</a>.</noscript>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Si Pages est configuré sur « main / (root) », ce fichier source est servi
+      // tel quel (non compilé). On renvoie alors vers la copie statique de docs/.
+      // Ne s'active ni dans le serveur de dev Vite (@vite/client) ni dans le
+      // bundle dist/ (script ./assets/...), qui sont déjà exécutables.
+      (function () {
+        var isViteDev = !!document.querySelector('script[src*="@vite/client"]');
+        var isBuiltBundle = !!document.querySelector('script[src*="/assets/"]');
+        if (!isViteDev && !isBuiltBundle && /\.github\.io$/.test(location.hostname)) {
+          location.replace('./docs/');
+        }
+      })();
+    </script>
   </body>
 </html>

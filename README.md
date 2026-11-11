@@ -129,6 +129,10 @@ par **trois chemins compatibles** avec les réglages Pages :
 > ni le `GITHUB_TOKEN` ne peuvent réaliser : **une seule fois**, choisir la source dans
 > `Settings → Pages` (recommandé : `Deploy from a branch → gh-pages / (root)`).
 > Ensuite, chaque push sur `main` redéploie automatiquement.
+>
+> Le `.nojekyll` racine désactive Jekyll. Si la source est `main / (root)`, le `index.html`
+> source Vite détecte qu'il n'est pas compilé et renvoie automatiquement vers `docs/` ;
+> en développement et dans `dist/`, cette redirection reste inactive.
 
 `vite.config.ts` utilise `base: './'` : les assets restent valides que le site soit servi
 à la racine d'un domaine ou sous `https://<user>.github.io/<repo>/`.
