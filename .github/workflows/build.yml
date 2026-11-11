@@ -1,0 +1,38 @@
+name: Build & check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Vérifier que le catalogue est à jour
+        run: |
+          cp src/data/catalog.json /tmp/catalog.before.json
+          # .sources/ n'est pas versionné : --sync re-clone les deux dépôts sources
+          python3 scripts/build_content.py --sync
+          # La date de génération diffère : on compare la structure, pas l'horodatage
+          python3 - <<'PY'
+          import json
+          a=json.load(open('/tmp/catalog.before.json')); b=json.load(open('src/data/catalog.json'))
+          assert [l['id'] for l in a['lessons']] == [l['id'] for l in b['lessons']], 'Le catalogue a changé : relancez le pipeline et commitez-le.'
+          print('catalogue cohérent :', len(b['lessons']), 'leçons')
+          PY
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/

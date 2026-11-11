@@ -1,0 +1,123 @@
+{
+ "categories": [
+  {
+   "id":"nmap","title":"Nmap & découverte","icon":"target","accent":"#a78bfa",
+   "description":"Cartographier un périmètre autorisé, du plus discret au plus complet.",
+   "commands":[
+    {"cmd":"nmap -sn 192.168.10.0/24","desc":"Découverte d'hôtes (ping sweep), sans scan de ports"},
+    {"cmd":"sudo nmap -sS -sV -O -T3 192.168.10.5","desc":"SYN scan + versions + fingerprinting OS"},
+    {"cmd":"sudo nmap -p- --min-rate 1000 -sV 192.168.10.5","desc":"Tous les 65 535 ports TCP, à réserver au lab"},
+    {"cmd":"sudo nmap -sU -p 53,161,69 192.168.10.5","desc":"Scan UDP ciblé (lent, résultats ambigus)"},
+    {"cmd":"nmap -sC -sV -p80,443 192.168.10.5","desc":"Scripts NSE par défaut sur les services web"},
+    {"cmd":"nmap -Pn -sS -p22 192.168.10.5","desc":"Ignore le ping : cible qui filtre l'ICMP"},
+    {"cmd":"nmap -oA rapport 192.168.10.5","desc":"Export normal + greppable + XML pour le rapport"},
+    {"cmd":"nmap --script smb-enum-shares -p445 192.168.10.5","desc":"Énumération des partages SMB"}
+   ]
+  },
+  {
+   "id":"linux","title":"Linux & audit d'hôte","icon":"terminal","accent":"#22d3ee",
+   "description":"La baseline de commandes modernes (Debian 12/13/14).",
+   "commands":[
+    {"cmd":"id && sudo -l","desc":"Identité, groupes et élévations sudo autorisées"},
+    {"cmd":"ip -c a && ip route","desc":"Interfaces, adresses et table de routage"},
+    {"cmd":"ss -tulpn","desc":"Ports en écoute et PID associé (remplace netstat)"},
+    {"cmd":"systemctl list-units --type=service --state=running","desc":"Services actifs"},
+    {"cmd":"find / -xdev -perm -4000 -type f -ls 2>/dev/null","desc":"Binaires SUID, vecteur de privesc classique"},
+    {"cmd":"find /etc -mmin -120 -type f -ls","desc":"Fichiers de configuration modifiés récemment"},
+    {"cmd":"journalctl -p warning --since '24 hours ago' --no-pager","desc":"Avertissements système des dernières 24 h"},
+    {"cmd":"awk '{print $1}' access.log | sort | uniq -c | sort -nr | head","desc":"Top IP d'un journal d'accès"},
+    {"cmd":"grep -RniE 'password|token|secret' ./projet --exclude-dir=.git","desc":"Recherche de secrets dans une arborescence"}
+   ]
+  },
+  {
+   "id":"web","title":"Web, HTTP & API","icon":"globe","accent":"#34d399",
+   "description":"Inspecter les en-têtes, les routes et les contrôles d'accès.",
+   "commands":[
+    {"cmd":"curl -sI https://cible.local","desc":"En-têtes de réponse, serveur et cookies"},
+    {"cmd":"curl -s -o /dev/null -w '%{http_code} %{size_download} %{time_total}\\n' URL","desc":"Comparer deux réponses (tests blind / boolean)"},
+    {"cmd":"curl -X OPTIONS -i https://cible.local/api","desc":"Méthodes HTTP autorisées"},
+    {"cmd":"gobuster dir -u http://cible.local -w /usr/share/wordlists/dirb/common.txt -x php,txt","desc":"Énumération de répertoires et fichiers"},
+    {"cmd":"curl -I -H 'Host: admin.cible.local' http://192.168.10.5","desc":"Test de virtual host par en-tête Host"},
+    {"cmd":"curl -s https://cible.local/api/orders/42 -H 'Authorization: Bearer $TOKEN_B'","desc":"Test d'autorisation avec une seconde identité (IDOR)"},
+    {"cmd":"openssl s_client -connect cible.local:443 -tls1_2 </dev/null","desc":"Inspecter la chaîne TLS et les versions proposées"},
+    {"cmd":"ffuf -u https://cible.local/FUZZ -w wordlist.txt -mc 200,301,403","desc":"Fuzzing de ressources avec filtrage par code"}
+   ]
+  },
+  {
+   "id":"enum","title":"Énumération de services","icon":"search","accent":"#38bdf8",
+   "description":"Tirer parti des services découverts sans exploser le bruit réseau.",
+   "commands":[
+    {"cmd":"dig +short example.com MX && dig +short TXT example.com","desc":"Serveurs de mail et politiques SPF/DKIM/DMARC"},
+    {"cmd":"dig axfr @ns1.example.com example.com","desc":"Tentative de transfert de zone (dans le périmètre autorisé)"},
+    {"cmd":"smbclient -L //192.168.10.5 -N","desc":"Partages SMB accessibles sans authentification"},
+    {"cmd":"enum4linux-ng -A 192.168.10.5","desc":"Énumération SMB/AD complète"},
+    {"cmd":"snmpwalk -v2c -c public 192.168.10.5 1.3.6.1.2.1.1","desc":"Community SNMP par défaut (souvent oubliée)"},
+    {"cmd":"ldapsearch -x -H ldap://192.168.10.5 -b 'dc=example,dc=local'","desc":"Interrogation de l'annuaire LDAP"},
+    {"cmd":"ftp 192.168.10.5   # anonymous / anonymous","desc":"Test de connexion FTP anonyme"},
+    {"cmd":"nc -nv 192.168.10.5 80","desc":"Bannière manuelle et dialogue brut avec un service"}
+   ]
+  },
+  {
+   "id":"msf","title":"Metasploit Framework","icon":"bug","accent":"#f472b6",
+   "description":"Séquence type, à pratiquer exclusivement sur un lab isolé.",
+   "commands":[
+    {"cmd":"msfconsole -q && db_status","desc":"Démarrer et vérifier la base de données"},
+    {"cmd":"search cve:2021 type:exploit platform:linux","desc":"Rechercher un module par CVE, type et plateforme"},
+    {"cmd":"use exploit/multi/handler && show options","desc":"Sélectionner un module et lister ses options"},
+    {"cmd":"set LHOST 192.168.10.2 && set LPORT 4444","desc":"Configurer l'hôte et le port d'écoute"},
+    {"cmd":"show payloads && set PAYLOAD linux/x86/meterpreter/reverse_tcp","desc":"Choisir la charge utile adaptée à la cible"},
+    {"cmd":"exploit -j && sessions -l","desc":"Lancer en tâche de fond et lister les sessions"},
+    {"cmd":"resource /chemin/scenario.rc","desc":"Rejouer un scénario complet automaticement"},
+    {"cmd":"workspace -a lab_client","desc":"Isoler les résultats d'une mission dans un workspace"}
+   ]
+  },
+  {
+   "id":"crypto","title":"Crypto & secrets","icon":"lock","accent":"#4ade80",
+   "description":"Générer, vérifier, signer — sans jamais stocker de secret en clair.",
+   "commands":[
+    {"cmd":"openssl rand -hex 32","desc":"Générer une clé aléatoire de 256 bits"},
+    {"cmd":"openssl genpkey -algorithm ED25519 -out id_ed25519","desc":"Générer une paire de clés moderne pour SSH/signature"},
+    {"cmd":"openssl dgst -sha256 -verify pub.pem -signature sig.bin fichier","desc":"Vérifier une signature"},
+    {"cmd":"age -r 'age1...' -o backup.tar.age backup.tar","desc":"Chiffrer une sauvegarde avec une clé publique"},
+    {"cmd":"sha256sum image.iso | tee image.iso.sha256","desc":"Empreinte d'intégrité d'une pièce à conviction"},
+    {"cmd":"stat -c '%a %U:%G %n' ~/.ssh/id_ed25519","desc":"Vérifier les permissions d'une clé privée (600)"},
+    {"cmd":"gitleaks detect --source . --no-banner","desc":"Détecter des secrets dans l'historique et l'arborescence"},
+    {"cmd":"gpg --encrypt --recipient user@example.com note.txt","desc":"Chiffrement asymétrique d'un fichier"}
+   ]
+  },
+  {
+   "id":"defense","title":"Défense, logs & pare-feu","icon":"shield","accent":"#4ade80",
+   "description":"Voir l'attaque depuis l'autre côté de la barricade.",
+   "commands":[
+    {"cmd":"sudo nft list ruleset","desc":"Afficher les règles nftables actives"},
+    {"cmd":"sudo journalctl -u ssh --since '1 hour ago' | grep -i 'failed'","desc":"Tentatives d'authentification SSH récentes"},
+    {"cmd":"sudo suricata -T -c /etc/suricata/suricata.yaml","desc":"Valider la syntaxe de la configuration IDS"},
+    {"cmd":"cscli decisions list && cscli metrics","desc":"Décisions et métriques CrowdSec"},
+    {"cmd":"sudo aa-status && systemd-analyze security | grep -E 'EXPOSED|UNSAFE'","desc":"AppArmor et exposition des unités systemd"},
+    {"cmd":"sudo tail -f /var/log/squid/access.log","desc":"Suivi temps réel des accès proxy"},
+    {"cmd":"sudo sysctl --system","desc":"Recharger et vérifier les paramètres noyau durcis"},
+    {"cmd":"lynis audit system --quick","desc":"Audit de conformité rapide d'un hôte Linux"}
+   ]
+  },
+  {
+   "id":"cloud","title":"Cloud & DevSecOps","icon":"layers","accent":"#fbbf24",
+   "description":"Contrôles automatisables dans un pipeline de livraison.",
+   "commands":[
+    {"cmd":"trivy fs --exit-code 1 --severity HIGH,CRITICAL .","desc":"Scanner dépendances et système de fichiers"},
+    {"cmd":"syft . -o spdx-json > sbom.json","desc":"Générer la nomenclature des composants (SBOM)"},
+    {"cmd":"semgrep scan --config auto --error","desc":"Analyse statique (SAST) bloquante en CI"},
+    {"cmd":"checkov -d ./terraform --quiet","desc":"Analyser l'infrastructure as code"},
+    {"cmd":"cosign verify --key cosign.pub image:tag","desc":"Vérifier la signature d'une image conteneur"},
+    {"cmd":"kubectl auth can-i --list --as=system:serviceaccount:default:app","desc":"Auditer les droits effectifs d'un compte de service"},
+    {"cmd":"aws iam get-account-authorization-details","desc":"Inventaire des politiques IAM (compte de lab)"},
+    {"cmd":"gitleaks protect --staged","desc":"Bloquer un commit contenant un secret (pre-commit)"}
+   ]
+  }
+ ],
+ "tips":[
+  "Toute commande de test suppose une autorisation écrite et un périmètre défini.",
+  "Sur Debian 13+, préférez ip / ss / nft à ifconfig / netstat / iptables.",
+  "Un scan n'est jamais une preuve de vulnérabilité : identifiez la version puis confrontez-la aux bases CVE.",
+  "Exportez vos résultats (-oA, fichiers horodatés) : la traçabilité fait partie du travail."
+ ]
+}
