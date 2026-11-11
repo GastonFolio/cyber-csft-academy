@@ -116,8 +116,11 @@ docker run -p 8080:80 cyber-academie
 
 ### GitHub Pages (déploiement automatique)
 
-Le workflow `.github/workflows/pages.yml` build et publie `dist/` à chaque `push` sur `main`.
-Il suffit d'activer **Settings → Pages → Source : GitHub Actions** sur le dépôt.
+`.github/workflows/pages.yml` build l'application et publie `dist/` sur la branche **`gh-pages`**
+à chaque `push` sur `main` (via `peaceiris/actions-gh-pages`). Créer cette branche **active
+automatiquement GitHub Pages** : aucun réglage ni token d'administration n'est nécessaire.
+En cas de besoin, vérifier `Settings → Pages → Source : Deploy from a branch → gh-pages / (root)`.
+
 `vite.config.ts` utilise `base: './'` : les assets restent valides que le site soit servi
 à la racine d'un domaine ou sous `https://<user>.github.io/<repo>/`.
 
