@@ -5,10 +5,13 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# Publication sur la branche gh-pages : sa création active automatiquement
-# GitHub Pages, sans configuration manuelle ni API d'administration.
+# Publication compatible avec les DEUX sources Pages possibles :
+#  - "Deploy from a branch" (branche gh-pages ou dossier /docs sur main)
+#  - "GitHub Actions" (artefact officiel deploy-pages)
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: gh-pages-deploy
@@ -25,6 +28,26 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npm run build
+
+      # 0) Copie statique maintenue dans docs/ (source Pages « main /docs »).
+      #    [skip ci] évite de redéclencher ce workflow en boucle.
+      - name: Synchroniser la copie statique docs/
+        run: |
+          rm -rf docs/assets docs/index.html docs/.nojekyll
+          cp dist/index.html docs/index.html
+          cp -a dist/assets docs/assets
+          touch docs/.nojekyll
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/index.html docs/assets docs/.nojekyll
+          if git diff --cached --quiet; then
+            echo "docs/ déjà à jour"
+          else
+            git commit -m "docs: synchroniser la copie statique [skip ci]"
+            git push origin HEAD:main
+          fi
+
+      # 1) Source « Deploy from a branch → gh-pages / (root) »
       - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -33,4 +56,24 @@ jobs:
           enable_jekyll: false
           force_orphan: true
           commit_message: 'deploy: ${{ github.sha }}'
-      - run: echo "✅ Publié sur https://gastonfolio.github.io/cyber-csft-academy/"
+
+      # 2) Source « GitHub Actions » : le dépôt doit déjà être activé une fois
+      #    dans Settings → Pages. Ces étapes sont sans échec si ce n'est pas le cas,
+      #    pour ne pas faire échouer le déploiement par branche.
+      - name: Configurer Pages (source GitHub Actions)
+        id: pages_config
+        continue-on-error: true
+        uses: actions/configure-pages@v5
+      - name: Préparer l'artefact Pages
+        id: pages_upload
+        if: steps.pages_config.outcome == 'success'
+        continue-on-error: true
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+      - name: Déployer via l'API Pages
+        if: steps.pages_upload.outcome == 'success'
+        continue-on-error: true
+        uses: actions/deploy-pages@v4
+
+      - run: echo "✅ Build + publication terminés (https://gastonfolio.github.io/cyber-csft-academy/)"
